@@ -1,0 +1,20 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+  <div id="content-main">
+    <p>
+      Система распознает разделы, главы, статьи и нумерованные пункты.
+      Результат создаётся как черновик, если вы не отметили публикацию.
+    </p>
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      <fieldset class="module aligned">
+        {{ form.as_p }}
+      </fieldset>
+      <div class="submit-row">
+        <input type="submit" value="Импортировать" class="default">
+        <a href="{% url 'admin:catalog_document_changelist' %}" class="closelink">Отмена</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}
