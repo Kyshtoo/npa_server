@@ -1,5 +1,6 @@
 from io import BytesIO
 
+from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
@@ -8,7 +9,7 @@ from django.urls import reverse
 from docx import Document as DocxDocument
 from rest_framework.test import APIClient
 
-from .models import Category, Document, DocumentSection
+from .models import Category, Document, DocumentFile, DocumentSection
 from .services.docx_import import import_docx
 
 
@@ -81,6 +82,16 @@ class CatalogApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertGreater(payload["size_bytes"], 0)
         self.assertEqual(payload["documents_count"], 1)
+
+
+class DocumentAdminConfigurationTests(TestCase):
+    def test_large_structure_is_not_rendered_inline_and_save_is_on_top(self):
+        document_admin = admin.site._registry[Document]
+        inline_models = {inline.model for inline in document_admin.inlines}
+
+        self.assertTrue(document_admin.save_on_top)
+        self.assertNotIn(DocumentSection, inline_models)
+        self.assertIn(DocumentFile, inline_models)
 
 
 class DocxImportTests(TestCase):

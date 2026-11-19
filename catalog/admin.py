@@ -29,23 +29,6 @@ class CategoryAdmin(admin.ModelAdmin):
     ordering = ("position", "id")
 
 
-class DocumentSectionInline(admin.StackedInline):
-    model = DocumentSection
-    extra = 0
-    fields = (
-        "parent",
-        "section_type",
-        "number",
-        "position",
-        "title_ru",
-        "title_ky",
-        "content_ru",
-        "content_ky",
-    )
-    ordering = ("position", "id")
-    show_change_link = True
-
-
 class DocumentFileInline(admin.TabularInline):
     model = DocumentFile
     extra = 0
@@ -76,6 +59,11 @@ def unpublish_documents(modeladmin, request, queryset):
 @admin.register(Document)
 class DocumentAdmin(admin.ModelAdmin):
     change_list_template = "admin/catalog/document/change_list.html"
+
+    # КНОПКИ СОХРАНЕНИЯ:
+    # True добавляет такой же блок «Сохранить» сверху страницы документа.
+    save_on_top = True
+
     list_display = (
         "id",
         "title_ru",
@@ -103,7 +91,10 @@ class DocumentAdmin(admin.ModelAdmin):
     )
     ordering = ("position", "-adoption_date", "id")
     readonly_fields = ("created_at", "updated_at")
-    inlines = (DocumentSectionInline, DocumentFileInline)
+    # Структура большого закона намеренно не выводится встроенными формами:
+    # сотни разделов перегружали страницу и JavaScript Django Admin.
+    # Сами разделы не удаляются и доступны отдельно в «Структуре документа».
+    inlines = (DocumentFileInline,)
     actions = (publish_documents, unpublish_documents)
     fieldsets = (
         (

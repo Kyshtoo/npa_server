@@ -29,13 +29,14 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
 
-# В локальной сети можно передать, например:
-# DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost,192.168.1.20
+# НАСТРОЙКА ЛОКАЛЬНОГО АДРЕСА:
+# При необходимости список можно заменить переменной среды, например в PowerShell:
+# $env:DJANGO_ALLOWED_HOSTS = '127.0.0.1,localhost,192.168.113.16'
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get(
         'DJANGO_ALLOWED_HOSTS',
-        '127.0.0.1,localhost,192.168.113.22',
+        '127.0.0.1,localhost,192.168.113.16',
     ).split(',')
     if host.strip()
 ]
@@ -45,6 +46,22 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
     if origin.strip()
 ]
+
+# НАСТРОЙКА NGROK:
+# Перед запуском Django подставьте выданный ngrok домен в PowerShell:
+# $env:NGROK_HOST = 'ВАШ-АДРЕС.ngrok-free.app'
+# Указывайте только имя хоста — без https://, без /api и без завершающего слеша.
+NGROK_HOST = os.environ.get('NGROK_HOST', '').strip()
+if NGROK_HOST:
+    if NGROK_HOST not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(NGROK_HOST)
+
+    ngrok_origin = f'https://{NGROK_HOST}'
+    if ngrok_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(ngrok_origin)
+
+# ngrok принимает HTTPS снаружи и передаёт Django исходную схему в этом заголовке.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 # Application definition
