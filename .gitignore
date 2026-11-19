@@ -1,0 +1,49 @@
+# Виртуальное окружение
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+
+# Локальная база данных
+db.sqlite3
+*.sqlite3
+
+# Пароли и настройки окружения
+.env
+.env.*
+!.env.example
+local_settings.py
+secrets.json
+
+# Загруженные документы и собранная статика
+media/
+staticfiles/
+
+# Закрытые ключи и сертификаты
+*.key
+*.pem
+*.pfx
+*.p12
+
+# Журналы и временные файлы
+*.log
+*.tmp
+*.bak
+
+# Редакторы
+.vscode/
+.idea/
+
+# Тестирование
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Системные файлы
+Thumbs.db
+.DS_Store
