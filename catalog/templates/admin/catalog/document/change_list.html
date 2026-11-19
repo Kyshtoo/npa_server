@@ -1,0 +1,11 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+  {% if has_add_permission %}
+    <li>
+      <a href="{% url 'admin:catalog_document_import_docx' %}">Импорт из Word</a>
+    </li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
