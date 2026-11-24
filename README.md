@@ -55,15 +55,44 @@ python manage.py makemigrations --check
 python manage.py test
 ```
 
-Для рабочего сервера задайте переменные окружения (значения ниже приведены
-только как пример):
+## Запуск на Ubuntu через Docker
 
-```text
-DJANGO_SECRET_KEY=replace-with-a-long-random-value
-DJANGO_DEBUG=0
-DJANGO_ALLOWED_HOSTS=npa.example.kg
-DJANGO_CSRF_TRUSTED_ORIGINS=https://npa.example.kg
+Production-контейнер использует Gunicorn и публикуется только на локальном
+адресе `127.0.0.1:8001`. Наружу API должен открывать Nginx.
+
+```bash
+cp .env.example .env
+openssl rand -hex 48
 ```
 
-Выбор хостинга и домена пока не зафиксирован в ТЗ, поэтому
-production-конфигурация намеренно не привязана к конкретному провайдеру.
+Скопируйте результат второй команды в `DJANGO_SECRET_KEY` файла `.env`.
+Если `id -u` или `id -g` возвращают не `1000`, также исправьте `APP_UID` и
+`APP_GID`. Затем:
+
+```bash
+mkdir -p data media staticfiles
+docker compose -f docker-compose.production.yml up -d --build
+docker compose -f docker-compose.production.yml ps
+curl http://127.0.0.1:8001/api/catalog/manifest/
+```
+
+Постоянные данные не находятся внутри контейнера:
+
+- `data/db.sqlite3` — база данных;
+- `media/` — загруженные Word/PDF-файлы;
+- `staticfiles/` — статика административной панели.
+
+Для создания администратора:
+
+```bash
+docker compose -f docker-compose.production.yml exec api \
+  python manage.py createsuperuser
+```
+
+Пример upstream для Nginx: `http://127.0.0.1:8001`. После подключения HTTPS
+установите в `.env` значения `DJANGO_SECURE_COOKIES=1` и
+`DJANGO_SECURE_SSL_REDIRECT=1`, затем перезапустите контейнер.
+
+Готовый шаблон виртуального хоста находится в
+`deploy/nginx-npa-api.conf`. Он не изменяет конфигурацию существующего сайта
+`geology-ecatalog.net.kg` и использует отдельный поддомен.
