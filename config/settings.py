@@ -29,9 +29,13 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
 
+# Не допускаем случайный запуск production с открытым тестовым ключом.
+if not DEBUG and SECRET_KEY == 'django-insecure-development-only-key':
+    raise RuntimeError('DJANGO_SECRET_KEY must be set when DJANGO_DEBUG=0')
+
 # НАСТРОЙКА ЛОКАЛЬНОГО АДРЕСА:
-# При необходимости список можно заменить переменной среды, например в PowerShell:
-# $env:DJANGO_ALLOWED_HOSTS = '127.0.0.1,localhost,192.168.113.16'
+# При необходимости список можно заменить переменной среды, например:
+# DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost,10.1.4.137
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get(
@@ -41,16 +45,8 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    origin.strip()
-    for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
-    if origin.strip()
-]
-
 # НАСТРОЙКА NGROK:
-# Перед запуском Django подставьте выданный ngrok домен в PowerShell:
-# $env:NGROK_HOST = 'ВАШ-АДРЕС.ngrok-free.app'
-# Указывайте только имя хоста — без https://, без /api и без завершающего слеша.
+# Указывайте только имя хоста — без https://, /api и завершающего слеша.
 NGROK_HOST = os.environ.get('NGROK_HOST', '').strip()
 if NGROK_HOST:
     if NGROK_HOST not in ALLOWED_HOSTS:
@@ -60,8 +56,22 @@ if NGROK_HOST:
     if ngrok_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(ngrok_origin)
 
-# ngrok принимает HTTPS снаружи и передаёт Django исходную схему в этом заголовке.
+# Nginx/ngrok завершают HTTPS снаружи и передают исходную схему заголовком.
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
+# После подключения HTTPS установите обе переменные в 1 в файле .env.
+SESSION_COOKIE_SECURE = os.environ.get('DJANGO_SECURE_COOKIES', '0') == '1'
+CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
+SECURE_SSL_REDIRECT = (
+    os.environ.get('DJANGO_SECURE_SSL_REDIRECT', '0') == '1'
+)
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '').split(',')
+    if origin.strip()
+]
 
 
 # Application definition
@@ -114,7 +124,10 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # В Docker база хранится в подключённой папке /app/data.
+        'NAME': Path(
+            os.environ.get('DJANGO_DB_PATH', BASE_DIR / 'db.sqlite3')
+        ),
     }
 }
 
@@ -154,10 +167,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = Path(
+    os.environ.get('DJANGO_STATIC_ROOT', BASE_DIR / 'staticfiles')
+)
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = Path(os.environ.get('DJANGO_MEDIA_ROOT', BASE_DIR / 'media'))
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
