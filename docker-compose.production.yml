@@ -1,0 +1,21 @@
+name: npa-server
+
+services:
+  api:
+    build:
+      context: .
+      args:
+        APP_UID: "${APP_UID:-1000}"
+        APP_GID: "${APP_GID:-1000}"
+    container_name: npa_api
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      # Django доступен только локальному Nginx, а не напрямую из интернета.
+      - "127.0.0.1:8001:8000"
+    volumes:
+      # Эти папки переживают пересборку и удаление контейнера.
+      - ./data:/app/data
+      - ./media:/app/media
+      - ./staticfiles:/app/staticfiles
