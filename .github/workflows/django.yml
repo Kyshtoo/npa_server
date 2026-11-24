@@ -19,3 +19,4 @@ jobs:
       - run: python manage.py makemigrations --check
       - run: python manage.py migrate --noinput
       - run: python manage.py test
+      - run: docker build --tag npa-server:test .
